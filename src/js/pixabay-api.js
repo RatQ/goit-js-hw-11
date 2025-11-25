@@ -1,3 +1,4 @@
+import axios from "axios";
 import { renderPhoto } from "./render-functions";
 import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
