@@ -1,39 +1,41 @@
-import { fetchImages, galleryCreate, errorAlert } from "./js/pixabay-api";
+import { galleryCreate, errorAlert } from "./js/pixabay-api";
 
-const form = document.querySelector(".search-form");
-const gallery = document.querySelector(".gallery");
-const loader = document.querySelector(".loader");
+const form = document.querySelector('.form');
 
-form.addEventListener("submit", onSearch);
+form.addEventListener('submit', formSubmit);
 
-async function onSearch(event) {
-  event.preventDefault();
 
-  const query = event.target.elements.searchQuery.value.trim();
+function formSubmit(event) {
+    event.preventDefault();
+    form.nextElementSibling.innerHTML = '';
+    if (!event.target.elements.searchQuery.value) {
+        return;
+    }
+    const searchParams = new URLSearchParams({
+        key: '53387136-aec480b6b069bc63c101bbeda',
+        q: event.target.elements.searchQuery.value,
+        image_type: 'photo',
+        orientation: 'horizontal',
+        safesearch: true,
+    });
+    const URL = `https://pixabay.com/api/?${searchParams}`;
 
-  if (!query) {
-    errorAlert("Please enter a search term");
-    return;
-  }
+    form.insertAdjacentHTML('afterend', '<div class="load"><span class="loader"></span>....Loading....Please, wait!</div>');
+    const load = document.querySelector('.load');
+    return fetch(URL)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(response.status);
+            }
+            return response.json();
+        })
+        .then((data) => {
+            load.remove();
+            galleryCreate(data);
+        })
 
-  gallery.innerHTML = "";
-
-  showLoader();
-
-  try {
-    const data = await fetchImages(query);
-    galleryCreate(data);
-  } catch (error) {
-    errorAlert(error.message);
-  } finally {
-    hideLoader();
-  }
-}
-
-function showLoader() {
-  loader.classList.remove("hidden");
-}
-
-function hideLoader() {
-  loader.classList.add("hidden");
+        .catch((error) => {
+            load.remove();
+            errorAlert(error);
+        });
 }
