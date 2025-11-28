@@ -1,41 +1,34 @@
-import { galleryCreate, errorAlert } from "./js/pixabay-api";
+import { fetchImages } from "./js/pixabay-api.js";
+import { renderPhoto, clearGallery, showLoader, hideLoader } from "./js/render-functions.js";
 
-const form = document.querySelector('.form');
+const form = document.querySelector(".form");
+const gallery = document.querySelector(".gallery");
 
-form.addEventListener('submit', formSubmit);
+form.addEventListener("submit", onSearch);
 
+async function onSearch(e) {
+  e.preventDefault();
 
-function formSubmit(event) {
-    event.preventDefault();
-    form.nextElementSibling.innerHTML = '';
-    if (!event.target.elements.searchQuery.value) {
-        return;
+  const query = e.target.elements.searchQuery.value.trim();
+  if (!query) {
+    // если есть showError, используй её; пока — alert
+    alert("Please enter a search term");
+    return;
+  }
+
+  clearGallery();
+  showLoader();
+
+  try {
+    const data = await fetchImages(query);
+    if (!data || !data.hits || data.hits.length === 0) {
+      alert("No images found");
+      return;
     }
-    const searchParams = new URLSearchParams({
-        key: '53387136-aec480b6b069bc63c101bbeda',
-        q: event.target.elements.searchQuery.value,
-        image_type: 'photo',
-        orientation: 'horizontal',
-        safesearch: true,
-    });
-    const URL = `https://pixabay.com/api/?${searchParams}`;
-
-    form.insertAdjacentHTML('afterend', '<div class="load"><span class="loader"></span>....Loading....Please, wait!</div>');
-    const load = document.querySelector('.load');
-    return fetch(URL)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(response.status);
-            }
-            return response.json();
-        })
-        .then((data) => {
-            load.remove();
-            galleryCreate(data);
-        })
-
-        .catch((error) => {
-            load.remove();
-            errorAlert(error);
-        });
+    renderPhoto(data.hits);
+  } catch (err) {
+    alert("Error: " + (err.message || err));
+  } finally {
+    hideLoader();
+  }
 }
